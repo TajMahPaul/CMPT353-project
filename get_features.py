@@ -8,8 +8,6 @@ import statistics
 
 RAW_DATA_DIRECTORY= "./raw_data"
 
-list_of_means = []
-
 def get_peaks(x, y):
     peaks, _ = find_peaks(y, height=.5)
     plt.plot(x,y)
@@ -33,6 +31,9 @@ def get_features(df, name):
     width = get_width(df[name], peaks)
     min_indices = get_min(df)
     plt.show()
+
+    list_of_means = []
+    features = []
    
     n = len(min_indices)
     single_peak_indices = []
@@ -58,10 +59,23 @@ def get_features(df, name):
         single_peak_indices.clear()
 
     plt.show()
-   
-    final_mean = statistics.mean(list_of_means)
-    print("Average magnitude:" , final_mean)
-    list_of_means.clear()
+
+    # convert list of means into pandas DataFrame
+    df_list_mean = pd.DataFrame(data=list_of_means)
+
+    # append to features the min, max, mean, median, variance, std
+    features.append(df_list_mean.min())
+    features.append(df_list_mean.max())
+    features.append(df_list_mean.mean())
+    features.append(df_list_mean.median())
+    features.append(df_list_mean.var())
+    features.append(df_list_mean.std())
+
+    # convert feature list to np array to transpose
+    features_np = np.array(features)
+    features_np = features_np.transpose()
+ 
+    return features_np
     
 
 
@@ -71,12 +85,20 @@ def process_data(path):
     df_left_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_left_leg.csv")
     df_right_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_right_leg.csv")
     
+    
     columns = ['ax', 'ay', 'az', 'a_mag']
     for column in columns:
-        get_features(df_right_leg, 'a_mag')
-        get_features(df_left_leg, 'a_mag')
+        features = get_features(df_right_leg, 'a_mag')
+        # get_features(df_left_leg, 'a_mag')
+
         
+        df_right_leg_feature = pd.DataFrame(data=features, columns=['min', 'max', 'mean', 'median', 'variance', 'std'])
+        print(df_right_leg_feature)
+
         break
+
+    
+    
 
 def get_people_data(path):
     for subdirs, dirs, files in os.walk(path):
@@ -84,7 +106,7 @@ def get_people_data(path):
             process_data(d)
             break
         break
-
+    
 
 def main():
     get_people_data(RAW_DATA_DIRECTORY)
