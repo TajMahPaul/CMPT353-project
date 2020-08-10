@@ -8,7 +8,7 @@ import statistics
 
 RAW_DATA_DIRECTORY= "./raw_data"
 
-mean_mag_right_leg = []
+list_of_means = []
 
 def get_peaks(x, y):
     peaks, _ = find_peaks(y, height=.5)
@@ -29,8 +29,8 @@ def get_min(df):
     return df[df['min'].notnull()].index.tolist()
 
 def get_features(df, name):
-    peaks = get_peaks(df['time'],df['a_mag'])
-    width = get_width(df['a_mag'], peaks)
+    peaks = get_peaks(df['time'],df[name])
+    width = get_width(df[name], peaks)
     min_indices = get_min(df)
     plt.show()
    
@@ -48,19 +48,20 @@ def get_features(df, name):
         single_peak = df.loc[single_peak_indices]
         
         # filters out small peaks
-        if (single_peak['a_mag'].mean() > 0.1):
+        if (single_peak[name].mean() > 0.1):
             x = list(range(len(single_peak)))
-            plt.plot(x, single_peak['a_mag'])
+            plt.plot(x, single_peak[name])
 
-            mean = single_peak['a_mag'].mean()
-            mean_mag_right_leg.append(mean)
+            mean = single_peak[name].mean()
+            list_of_means.append(mean)
 
         single_peak_indices.clear()
 
-        
+    plt.show()
    
-    total_mean_mag_right_leg = statistics.mean(mean_mag_right_leg)
-    print(total_mean_mag_right_leg)
+    final_mean = statistics.mean(list_of_means)
+    print("Average magnitude:" , final_mean)
+    list_of_means.clear()
     
 
 
@@ -73,12 +74,8 @@ def process_data(path):
     columns = ['ax', 'ay', 'az', 'a_mag']
     for column in columns:
         get_features(df_right_leg, 'a_mag')
+        get_features(df_left_leg, 'a_mag')
         
-        # get_features(df_right_leg['time'],df_right_leg['a_mag'], 'a_mag')
-        # get_features(df_right_leg['time'],df_right_leg['az'], 'az')
-        # get_features(df_right_leg['time'],df_right_leg['ay'], 'ay')
-        # get_features(df_right_leg['time'],df_right_leg['ax'], 'ax')
-        plt.show()
         break
 
 def get_people_data(path):
