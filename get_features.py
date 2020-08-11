@@ -8,29 +8,34 @@ import statistics
 
 RAW_DATA_DIRECTORY= "./raw_data"
 
+# def get_distance_per_step():
+
+
+# def get_velocity_per_step():
+
 def get_peaks(x, y):
     peaks, _ = find_peaks(y, height=.5)
-    plt.plot(x,y)
-    plt.plot(peaks, y[peaks], "x")
+    # plt.plot(x,y)
+    # plt.plot(peaks, y[peaks], "x")
     return peaks
 
 def get_width(y, peaks):
     width = peak_widths(y, peaks, rel_height=0.9)
-    plt.hlines(*width[1:], color="C2")
+    # plt.hlines(*width[1:], color="C2")
     return width
 
 def get_min(df):
     df['min'] = df.iloc[argrelextrema(df.a_mag.values, np.less_equal, order=5)[0]]['a_mag']
-    plt.scatter(df.index,df['min'], c='r')
+    # plt.scatter(df.index,df['min'], c='r')
 
     # returns indices of min values
     return df[df['min'].notnull()].index.tolist()
 
-def get_features(df, name):
+def get_features(df, name, path):
     peaks = get_peaks(df['time'],df[name])
     width = get_width(df[name], peaks)
     min_indices = get_min(df)
-    plt.show()
+    # plt.show()
 
     list_of_means = []
     features = []
@@ -50,8 +55,8 @@ def get_features(df, name):
         
         # filters out small peaks
         if (single_peak[name].mean() > 0.1):
-            x = list(range(len(single_peak)))
-            plt.plot(x, single_peak[name])
+            single_peak['time'] = get_elapse_time(single_peak['time'])
+            plt.plot(single_peak['time'], single_peak[name])
 
             mean = single_peak[name].mean()
             list_of_means.append(mean)
@@ -78,17 +83,25 @@ def get_features(df, name):
     return features_np
     
 
+def get_elapse_time(timeSeries):
+    if(timeSeries.size > 0):
+        min_time = timeSeries.iloc[0]
+        timeSeries = timeSeries.apply(lambda x: x - min_time)
+    return timeSeries
 
 def process_data(path):
     df_features = pd.DataFrame()
 
-    df_left_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_left_leg.csv")
-    df_right_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_right_leg.csv")
+    df_left_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_left_leg.csv", parse_dates=['time'])
+    df_right_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_right_leg.csv", parse_dates=['time'])
     
+    # # Convert time to elapsed time
+    # df_left_leg['time'] = get_elapse_time(df_left_leg['time'])
+    # df_right_leg['time'] = get_elapse_time(df_right_leg['time'])
     
     columns = ['ax', 'ay', 'az', 'a_mag']
     for column in columns:
-        features = get_features(df_right_leg, 'a_mag')
+        features = get_features(df_right_leg, 'a_mag', path)
         # get_features(df_left_leg, 'a_mag')
 
         
