@@ -85,15 +85,24 @@ def get_single_leg_features(df, path):
     # initalize data structures
     segmented_peaks = []
     
+    # set n to the number of min indices found and iterate through the min_indices
     n = len(min_indices)
     for i in range(n):
 
+        # takes 2 min indices adjacent to each other
+        # start_number is the start index and end_number is the index directly
+        # to the right of start index in the min_indices list
+        # the values between start number and end number represent 1 peak
         single_peak_indices = []
         start_number = min_indices[i]
 
+        # error condition: when start_number is at last indices
+        # there is no next indice to its right to compare with
         if(i != n-1):
             end_number = min_indices[i+1]
 
+        # gets the indices of values between start_number and end_number
+        # and saves it into single_peak_indices
         while (start_number <= end_number):
             single_peak_indices.append(start_number)
             start_number = start_number + 1
