@@ -15,7 +15,7 @@ RAW_DATA_DIRECTORY= "./raw_data"
 
  # function that get the mag distance / step
 def get_distance_per_step(df):
-    velocity = simps(df['a_mag'])
+    velocity = simps(df['signal'])
     time = df['time'].max() - df['time'].min() 
     distance = velocity * time
     distance = distance.astype(int)
@@ -23,7 +23,7 @@ def get_distance_per_step(df):
 
 # funstion that get the magnitude velocity / step
 def get_velocity_per_step(df):
-    return simps(df['a_mag'])
+    return simps(df['signal'])
 
 # normalizes the x-axis from 0-1 and makes it so there are 50 evenly spaced points for a given peak (to make comparison of peaks easier with DWS distance algorithm)
 def normalize_and_iterpolate():
@@ -63,42 +63,34 @@ def filter_peaks(segPeaks, name):
     print(average_distances)
     return segPeaks[min(average_distances, key = lambda t: t[1])[0]]
 
-def get_peaks(x, y):
-    peaks, _ = find_peaks(y, height=.5)
-    # plt.plot(x,y)
-    # plt.plot(peaks, y[peaks], "x")
-    return peaks
-
-def get_width(y, peaks):
-    width = peak_widths(y, peaks, rel_height=0.9)
-    # plt.hlines(*width[1:], color="C2")
-    return width
-
+# function to return local minimum points for a given spectrum
 def get_min(df):
     df['min'] = df.iloc[argrelextrema(df.a_mag.values, np.less_equal, order=5)[0]]['a_mag']
-    # plt.scatter(df.index,df['min'], c='r')
 
     # returns indices of min values
     return df[df['min'].notnull()].index.tolist()
 
-def get_features(df, name, path):
-    print("hi")
-    peaks = get_peaks(df['time'],df[name])
-    width = get_width(df[name], peaks)
+# function to converted timestamps to elapse time
+def get_elapse_time(timeSeries):
+    if(timeSeries.size > 0):
+        min_time = timeSeries.iloc[0]
+        timeSeries = timeSeries.apply(lambda x: x - min_time)
+    return timeSeries
+
+def get_single_leg_features(df, path):
+
+    # get the local minimum points
     min_indices = get_min(df)
     
+    # initalize data structures
     segmented_peaks = []
-
-    list_of_means = []
-    features = {}
-    features["values"] = []
-    features["labels"] = []
-    
     
     n = len(min_indices)
-    single_peak_indices = []
     for i in range(n):
+
+        single_peak_indices = []
         start_number = min_indices[i]
+
         if(i != n-1):
             end_number = min_indices[i+1]
 
@@ -106,59 +98,39 @@ def get_features(df, name, path):
             single_peak_indices.append(start_number)
             start_number = start_number + 1
         
+        # get the signal and normalize the name (convention over configuration)
         single_peak = df.loc[single_peak_indices][["time", name]]
-        
-        print(single_peak)
+        single_peak = df.rename(columns={name:'signal'})
 
-        # filters out small peaks
+        # filters out really small peaks
         if (single_peak[name].mean() > 0.1):
 
-            # get elapse time 
+            # conver time to elapse time 
             single_peak['time'] = get_elapse_time(single_peak['time'])
 
+            # add to our collection of peaks in this signal
             segmented_peaks.append(single_peak)
 
-            mean = single_peak[name].mean()
-            list_of_means.append(mean)
+    # return the best peak of this signal
+    best_peak = filter_peaks(segmented_peaks)
+    # plt.plot(best_peak['time'], best_peak['a_mag'])
+    # plt.show()
 
-        single_peak_indices.clear()
-
-    best_peak = filter_peaks(segmented_peaks, name)
-    plt.plot(best_peak['time'], best_peak['a_mag'])
-    plt.show()
+    # create features from best peak
+    step_time = best_peak["time"].max() - best_peak["time"].min()
+    step_velo = get_velocity_per_step(best_peak)
+    step_dist = get_distance_per_step(best_peak)
+    # TODO: get more features if time
 
     # convert list of means into pandas DataFrame
     df_list_mean = pd.DataFrame(data=list_of_means)
 
     # append the min, max, mean, median, variance, std to features['values']
-    features['values'].append(df_list_mean.min())
-    features['values'].append(df_list_mean.max())
-    features['values'].append(df_list_mean.mean())
-    features['values'].append(df_list_mean.median())
-    features['values'].append(df_list_mean.var())
-    features['values'].append(df_list_mean.std())
-
-    # append min, max, mean, median, variance, std to features['label']
-    features['labels'].append("min")
-    features['labels'].append("max")
-    features['labels'].append("mean")
-    features['labels'].append("median")
-    features['labels'].append("var")
-    features['labels'].append("std")
+    feature_values = [step_time, step_velo, step_dist]
+    feature_labels = ['step_time', 'step_vel', 'ste_dis']
   
-    # convert feature list to np array to transpose
-    features_np = np.array(features['values'])
-    features_np = features_np.transpose()
-
-    return features_np, features['labels']
+    return feature_values, feature_labels, best_peak
     
-
-def get_elapse_time(timeSeries):
-    if(timeSeries.size > 0):
-        min_time = timeSeries.iloc[0]
-        timeSeries = timeSeries.apply(lambda x: x - min_time)
-    return timeSeries
-
 def process_filtered_data(path):
     
     # Create dataframe for features accross all people
@@ -169,15 +141,26 @@ def process_filtered_data(path):
     df_right_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_right_leg.csv", parse_dates=['time'])
     
     # Get features for all signals
-    columns = df_left_leg.columns
+    columns = list(df_left_leg.columns)
 
+    # for every signal (ax, ay, az, a_mag)
     for c in columns:
         if (c != "time"):
-            features, columns = get_features(df_right_leg, 'a_mag', path)
-            df_right_leg_feature = pd.DataFrame(data=features, columns=columns)
+            # get features for right leg
+            right_features, right_labels, right_best_peak_right_leg = get_single_leg_features(df_right_leg, path)
+            right_labels = map(right_labels, lambda x: x + "_" + c + "_right_leg")
+            
+            # get features for left leg
+            left_features, left_labels, best_peak_left_leg, = get_single_leg_features(df_left_leg, path)
+            left_labels = map(left_labels, lambda x: x + "_" + c + "_right_leg")
+
+            right_features.extend(left_features)
+            right_labels.extent(left_labels)
+
+            combined_features, combined_labels = fet_combined_leg_features(best_peak_left_leg, right_best_peak_right_leg)
+            # TODO: remove me
+            break
         
-        # TODO: remove me
-        break
 
 # start the feature extraction
 def start(path):
