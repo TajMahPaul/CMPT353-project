@@ -13,21 +13,27 @@ from fastdtw import fastdtw
 RAW_DATA_DIRECTORY= "./raw_data"
 
 
-
+ # function that get the mag distance / step
 def get_distance_per_step(df):
     velocity = simps(df['a_mag'])
     time = df['time'].max() - df['time'].min() 
     distance = velocity * time
     distance = distance.astype(int)
     return distance
-    
 
+# funstion that get the magnitude velocity / step
 def get_velocity_per_step(df):
     return simps(df['a_mag'])
 
+# normalizes the x-axis from 0-1 and makes it so there are 50 evenly spaced points for a given peak (to make comparison of peaks easier with DWS distance algorithm)
+def normalize_and_iterpolate():
+    return
+
+
+# returns the peaks with lowest DWS distance to every other peak (ie. the peak more like all the other peaks)
 def filter_peaks(segPeaks, name):
 
-    # returns the peaks with lowest DWS distance to every other peak (ie. the peak more like all the other peaks)
+    
     average_distances = []
     
     for i in range(len(segPeaks)):
@@ -76,6 +82,7 @@ def get_min(df):
     return df[df['min'].notnull()].index.tolist()
 
 def get_features(df, name, path):
+    print("hi")
     peaks = get_peaks(df['time'],df[name])
     width = get_width(df[name], peaks)
     min_indices = get_min(df)
@@ -99,8 +106,10 @@ def get_features(df, name, path):
             single_peak_indices.append(start_number)
             start_number = start_number + 1
         
-        single_peak = df.loc[single_peak_indices]
+        single_peak = df.loc[single_peak_indices][["time", name]]
         
+        print(single_peak)
+
         # filters out small peaks
         if (single_peak[name].mean() > 0.1):
 
@@ -150,40 +159,41 @@ def get_elapse_time(timeSeries):
         timeSeries = timeSeries.apply(lambda x: x - min_time)
     return timeSeries
 
-def process_data(path):
+def process_filtered_data(path):
+    
+    # Create dataframe for features accross all people
     df_features = pd.DataFrame()
 
+    # import the filtered data set
     df_left_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_left_leg.csv", parse_dates=['time'])
     df_right_leg = pd.read_csv(RAW_DATA_DIRECTORY + "/" + path + "/filtered_right_leg.csv", parse_dates=['time'])
     
-    # # Convert time to elapsed time
-    # df_left_leg['time'] = get_elapse_time(df_left_leg['time'])
-    # df_right_leg['time'] = get_elapse_time(df_right_leg['time'])
-    
-    columns = ['ax', 'ay', 'az', 'a_mag']
+    # Get features for all signals
+    columns = df_left_leg.columns
+
     for c in columns:
-        features, column = get_features(df_right_leg, 'a_mag', path)
-        # get_features(df_left_leg, 'a_mag')
-
+        if (c != "time"):
+            features, columns = get_features(df_right_leg, 'a_mag', path)
+            df_right_leg_feature = pd.DataFrame(data=features, columns=columns)
         
-        df_right_leg_feature = pd.DataFrame(data=features, columns=column)
-        print(df_right_leg_feature)
-
+        # TODO: remove me
         break
 
-    
-    
+# start the feature extraction
+def start(path):
 
-def get_people_data(path):
+    # every directory equates one person
     for subdirs, dirs, files in os.walk(path):
         for d in dirs:
-            process_data(d)
+            process_filtered_data(d)
+            
+            # TODO: remove me
             break
         break
     
 
 def main():
-    get_people_data(RAW_DATA_DIRECTORY)
+    start(RAW_DATA_DIRECTORY)
 
 
 if __name__=='__main__':
