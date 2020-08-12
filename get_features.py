@@ -12,6 +12,8 @@ from fastdtw import fastdtw
 
 RAW_DATA_DIRECTORY= "./raw_data"
 
+
+
 def get_distance_per_step(df):
     velocity = simps(df['a_mag'])
     time = df['time'].max() - df['time'].min() 
@@ -81,10 +83,10 @@ def get_features(df, name, path):
     segmented_peaks = []
 
     list_of_means = []
-    features = {
-        "labels": [],
-        "values": []
-    }
+    features = {}
+    features["values"] = []
+    features["labels"] = []
+    
     
     n = len(min_indices)
     single_peak_indices = []
@@ -119,27 +121,27 @@ def get_features(df, name, path):
     # convert list of means into pandas DataFrame
     df_list_mean = pd.DataFrame(data=list_of_means)
 
-    # append to features the min, max, mean, median, variance, std
-    features.values.append(df_list_mean.min())
-    features.values.append(df_list_mean.max())
-    features.values.append(df_list_mean.mean())
-    features.values.append(df_list_mean.median())
-    features.values.append(df_list_mean.var())
-    features.values.append(df_list_mean.std())
+    # append the min, max, mean, median, variance, std to features['values']
+    features['values'].append(df_list_mean.min())
+    features['values'].append(df_list_mean.max())
+    features['values'].append(df_list_mean.mean())
+    features['values'].append(df_list_mean.median())
+    features['values'].append(df_list_mean.var())
+    features['values'].append(df_list_mean.std())
 
-     # append to features the min, max, mean, median, variance, std
-    features.labels.append("min")
-    features.labels.append("max")
-    features.labels.append("mean")
-    features.labels.append("median")
-    features.labels.append("var")
-    features.labels.append("std")
-
+    # append min, max, mean, median, variance, std to features['label']
+    features['labels'].append("min")
+    features['labels'].append("max")
+    features['labels'].append("mean")
+    features['labels'].append("median")
+    features['labels'].append("var")
+    features['labels'].append("std")
+  
     # convert feature list to np array to transpose
-    features_np = np.array(features)
+    features_np = np.array(features['values'])
     features_np = features_np.transpose()
- 
-    return features_np
+
+    return features_np, features['labels']
     
 
 def get_elapse_time(timeSeries):
@@ -159,12 +161,12 @@ def process_data(path):
     # df_right_leg['time'] = get_elapse_time(df_right_leg['time'])
     
     columns = ['ax', 'ay', 'az', 'a_mag']
-    for column in columns:
-        features = get_features(df_right_leg, 'a_mag', path)
+    for c in columns:
+        features, column = get_features(df_right_leg, 'a_mag', path)
         # get_features(df_left_leg, 'a_mag')
 
         
-        df_right_leg_feature = pd.DataFrame(data=features.values, columns= features.labels)
+        df_right_leg_feature = pd.DataFrame(data=features, columns=column)
         print(df_right_leg_feature)
 
         break
