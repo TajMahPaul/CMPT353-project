@@ -5,13 +5,21 @@ import matplotlib.pyplot as plt
 from scipy.signal import chirp, find_peaks, peak_widths, argrelextrema
 from datetime import datetime
 import statistics
+from scipy.integrate import simps
 
 RAW_DATA_DIRECTORY= "./raw_data"
 
-# def get_distance_per_step():
+def get_distance_per_step(df):
+    velocity = simps(df['a_mag'])
+    time = df['time'].max() - df['time'].min() 
+    distance = velocity * time
+    distance = distance.astype(int)
+    return distance
+    
 
+def get_velocity_per_step(df):
+    return simps(df['a_mag'])
 
-# def get_velocity_per_step():
 
 def get_peaks(x, y):
     peaks, _ = find_peaks(y, height=.5)
@@ -63,7 +71,7 @@ def get_features(df, name, path):
 
         single_peak_indices.clear()
 
-    plt.show()
+    # plt.show()
 
     # convert list of means into pandas DataFrame
     df_list_mean = pd.DataFrame(data=list_of_means)
