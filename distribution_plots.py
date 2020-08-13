@@ -35,14 +35,20 @@ def create_distribution(df):
     plt.clf()
 
 
-    plt.hist(df['gender'], bins=2)
+    df_male = df[df['gender'] == 'male']
+    df_female = df[df['gender'] == 'female']
+    plt.bar(['male'],[len(df_male)])
+    plt.bar(['female'],[len(df_female)], color="C1")
     plt.title("Gender Distribution")
     plt.xlabel("Gender")
     plt.ylabel("Number")
     plt.savefig(FIG_DATA_DIRECOTRY + 'gender_distribution.png') 
     plt.clf()
 
-    plt.hist(df['has_injury'], bins=2)
+    df_injury = df[df['has_injury'] == 'true']
+    df_no_injury = df[df['has_injury'] == 'false']
+    plt.bar(['injury'],[len(df_injury)])
+    plt.bar(['no injury'],[len(df_no_injury)], color="C1")
     plt.title("Injury Distribution")
     plt.xlabel("Injury")
     plt.ylabel("Number")
