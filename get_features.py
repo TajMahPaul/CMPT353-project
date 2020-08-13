@@ -125,18 +125,20 @@ def get_single_leg_features(df, name):
         single_peak = df.loc[single_peak_indices][["time", name]]
         single_peak = single_peak.rename(columns={name:'signal'})
 
-        # filters out really small peaks
-        if (single_peak['signal'].mean() > 0.1):
 
-            # conver time to elapse time 
-            single_peak['time'] = get_elapse_time(single_peak['time'])
+        # conver time to elapse time 
+        single_peak['time'] = get_elapse_time(single_peak['time'])
 
+        if(single_peak.shape[0] > 2):
             # add to our collection of peaks in this signal
+            # plt.plot(single_peak['time'], single_peak['signal'])
             segmented_peaks.append(single_peak)
 
     # return the best peak of this signal
     best_peak = filter_peaks(segmented_peaks)
-    # plt.plot(best_peak['time'], best_peak['a_mag'])
+    # plt.xlabel("Elapsed Time(s)")
+    # plt.ylabel("Magnitude of Acceleration (m/s^2)")
+    # plt.title("Segmented Gait Peaks")
     # plt.show()
 
     # create features from best peak
@@ -174,14 +176,14 @@ def process_filtered_data(path):
     for c in columns:
 
         # lets only consider magnitude of acceleration for simplicity
-        if (c == "a_mag"):
+        if (c in ["a_mag"]):
             # get features for right leg
             right_features, right_labels, right_best_peak_right_leg = get_single_leg_features(df_right_leg, c)
             right_labels = list(map(lambda x: x + "_" + c + "_right_leg", right_labels))
             
             # get features for left leg
             left_features, left_labels, best_peak_left_leg, = get_single_leg_features(df_left_leg, c)
-            left_labels = list(map(lambda x: x + "_" + c + "_right_leg", left_labels))
+            left_labels = list(map(lambda x: x + "_" + c + "_left_leg", left_labels))
 
             # get features for that measure the asymmetry of the legs
             combined_features, combined_labels = fet_combined_leg_features(best_peak_left_leg, right_best_peak_right_leg)
@@ -224,7 +226,7 @@ def start(path):
                 final_df = pd.concat([final_df, pd.DataFrame(columns=col_labels)])
 
             final_df.loc[person_id] = features 
-        final_df.to_csv("features.csv", index=False)
+        final_df.to_csv("features_amag.csv", index=False)
 
 def main():
     start(RAW_DATA_DIRECTORY)
