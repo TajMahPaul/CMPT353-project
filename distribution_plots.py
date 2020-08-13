@@ -47,8 +47,8 @@ def create_distribution(df):
 
     df_injury = df[df['has_injury'] == 'true']
     df_no_injury = df[df['has_injury'] == 'false']
-    plt.bar(['injury'],[len(df_injury)])
-    plt.bar(['no injury'],[len(df_no_injury)], color="C1")
+    plt.bar(['true'],[len(df_injury)])
+    plt.bar(['false'],[len(df_no_injury)], color="C1")
     plt.title("Injury Distribution")
     plt.xlabel("Injury")
     plt.ylabel("Number")
