@@ -8,59 +8,66 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 
 OUTPUT_TEMPLATE = (
-    'Bayesian classifier:    {bayes_rgb:.3f} \n'
-    'kNN classifier:         {knn_rgb:.3f} \n'
+    'Bayesian classifier:    {bayes:.3f} \n'
+    'kNN classifier:         {knn:.3f} \n'
+    'rf classifier:          {rf:.3f} \n'
+    'dt classifier:          {dt:.3f} \n'
+    'mlp classifier:         {mlp:.3f} \n'
+    'sv classifier:         {mlp:.3f} \n'
+    
 )
 
-def create_test_df():
-    myList = []
-
-    column_name = ['R', 'G', 'B', 'Label']
-    a = [168, 211, 243, 'blue']
-    b = [37, 32, 40, 'black']
-    c = [35, 34, 38, 'black']
-    d = [79,74 ,159, 'purple']
-    e = [55, 99, 34, 'green']
-
-    myList.append(a)
-    myList.append(b)
-    myList.append(c)
-    myList.append(d)
-    myList.append(e)
-
-    df = pd.DataFrame(data=myList, columns=column_name)
-    return df
-    
-
 def main():
-    data = create_test_df()
-    print(data)
 
-    X = data[['R', 'G', 'B']].values / 255
-    y = data['Label'].values
+    data = pd.read_csv("features.csv")
+    print(data)    
 
-    print(X)
-    print(y)
+
+    X = data.drop('has_injury', axis=1).values
+    y = data['has_injury'].values
 
     X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
-    bayes_rgb_model = make_pipeline(
+    bayes_model = make_pipeline(
         GaussianNB()
     )
 
-    knn_rgb_model = make_pipeline(
-        KNeighborsClassifier(n_neighbors=2)
+    knn_model = make_pipeline(
+        KNeighborsClassifier(n_neighbors=3)
     )
 
-    models = [bayes_rgb_model, knn_rgb_model]
+    rf_model = make_pipeline(
+        RandomForestClassifier(n_estimators=100, max_depth=6, min_samples_leaf=2)
+    )
+
+    dt_model = make_pipeline(
+        DecisionTreeClassifier(max_depth=2)
+    )
+
+    mlp_model = make_pipeline(
+        MLPClassifier(solver='lbfgs', hidden_layer_sizes=(4,4), activation='logistic')
+    )
+
+    svc_model = make_pipeline(
+        SVC()
+    )
+
+    models = [bayes_model, knn_model, rf_model, dt_model, mlp_model, svc_model]
     for i, m in enumerate(models):  
         m.fit(X_train, y_train)
 
     print(OUTPUT_TEMPLATE.format(
-            bayes_rgb=bayes_rgb_model.score(X_valid, y_valid),
-            knn_rgb=knn_rgb_model.score(X_valid, y_valid),
+            bayes=bayes_model.score(X_valid, y_valid),
+            knn=knn_model.score(X_valid, y_valid),
+            rf=rf_model.score(X_valid, y_valid),
+            dt=dt_model.score(X_valid, y_valid),
+            mlp=mlp_model.score(X_valid, y_valid),
+            svc=svc_model.score(X_valid, y_valid)
         ))
 
 

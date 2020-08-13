@@ -8,6 +8,8 @@ from scipy.signal import chirp, find_peaks, peak_widths
 import json
     
 RAW_DATA_DIRECTORY= "./raw_data"
+FIG_DATA_DIRECOTRY="./figures"
+
 json_list = []
 
 def create_data_frame(path):
@@ -29,7 +31,7 @@ def create_distribution(df):
     plt.title("Age Distribution")
     plt.xlabel("Age (Years)")
     plt.ylabel("Number")
-    plt.savefig('age_distribution.png') 
+    plt.savefig(FIG_DATA_DIRECOTRY + 'age_distribution.png') 
     plt.clf()
 
 
@@ -37,21 +39,21 @@ def create_distribution(df):
     plt.title("Gender Distribution")
     plt.xlabel("Gender")
     plt.ylabel("Number")
-    plt.savefig('gender_distribution.png') 
+    plt.savefig(FIG_DATA_DIRECOTRY + 'gender_distribution.png') 
     plt.clf()
 
     plt.hist(df['has_injury'], bins=2)
     plt.title("Injury Distribution")
     plt.xlabel("Injury")
     plt.ylabel("Number")
-    plt.savefig('injury_distribution.png') 
+    plt.savefig(FIG_DATA_DIRECOTRY + 'injury_distribution.png') 
     plt.clf()
 
     plt.hist(df['height'], bins=9)
     plt.title("Height Distribution")
     plt.xlabel("Height (Feet)")
     plt.ylabel("Number")
-    plt.savefig('height_distribution.png') 
+    plt.savefig(FIG_DATA_DIRECOTRY + 'height_distribution.png') 
     plt.clf()
 
     plt.hist(df['weight'], bins=20)
@@ -59,7 +61,7 @@ def create_distribution(df):
     plt.xlabel("Weight (lbs)")
     plt.ylabel("Number")
     plt.xticks(rotation=-90)
-    plt.savefig('weight_distribution.png') 
+    plt.savefig(FIG_DATA_DIRECOTRY + 'weight_distribution.png') 
     plt.clf()
     
 
